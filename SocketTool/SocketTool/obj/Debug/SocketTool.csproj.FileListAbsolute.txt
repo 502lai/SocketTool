@@ -1,0 +1,7 @@
+E:\28.git_socketTool\SocketTool\SocketTool\obj\Debug\SocketTool.csprojAssemblyReference.cache
+E:\28.git_socketTool\SocketTool\SocketTool\obj\Debug\SocketTool.csproj.CoreCompileInputs.cache
+E:\28.git_socketTool\SocketTool\SocketTool\bin\Debug\SocketTool.exe.config
+E:\28.git_socketTool\SocketTool\SocketTool\bin\Debug\SocketTool.exe
+E:\28.git_socketTool\SocketTool\SocketTool\bin\Debug\SocketTool.pdb
+E:\28.git_socketTool\SocketTool\SocketTool\obj\Debug\SocketTool.exe
+E:\28.git_socketTool\SocketTool\SocketTool\obj\Debug\SocketTool.pdb
