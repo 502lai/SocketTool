@@ -27,6 +27,8 @@ namespace SocketTool
          private  Queue<byte[]> dataReceivedQueue = new Queue<byte[]>();
          byte[] tmpbytes;
          readonly Mutex mutex = new Mutex();
+        public delegate void ProcessMethod(byte[] data, int len);
+        public ProcessMethod processMethod;
         public int port { get; set; }
         /// <summary>
         /// 接收数据
@@ -62,35 +64,54 @@ namespace SocketTool
             dataReceivedQueue.Clear();
         }
         delegate void CallBack(IAsyncResult ar);
-        private  void ReceiveMessage_Asyn(CallBack callBack)
+        public  void ReceiveMessage_Asyn(ProcessMethod callBack)
         {
-            if (receiveThread != null)
-            {
-                receiveThread.Abort();
-                dataReceivedQueue.Clear();
-            }              
+            processMethod= new ProcessMethod(callBack);
             try
             {
-                //  serverSocket.BeginReceive(buffer, 0, buffer.Length, 0, new AsyncCallback(callBack), buffer);
-             //   serverSocket.BeginReceive();
+                // m_recvBuf = new byte[SocketParserConstants.MAX_SIZE_READ_PACKET_BUFFER];
+                buffer = new byte[1024];
+                EndPoint newClientEP = new IPEndPoint(IPAddress.Any, 0);
+                // receive data from client
+                serverSocket.BeginReceiveFrom(buffer, 0, buffer.Length, SocketFlags.None, ref newClientEP, DoReceiveFrom, serverSocket);
+            }
+            catch (SocketException ex)
+            {
+                Console.WriteLine("SocketException Start: {0}", ex.Message);
             }
             catch (Exception ex)
             {
-                try
-                {
-                    Debug.WriteLine(ex.Message);
-                   // serverSocket.EndReceive();
-                    serverSocket.Close();
-                   // break;
-                }
-                catch (Exception)
-                {
-                }
+                Console.WriteLine("Exception Start: {0}", ex.Message);
             }
-            
-        }
 
-        private  void ReceiveMessage_ProConM()
+        }
+        private void DoReceiveFrom(IAsyncResult iar)
+        {
+            try
+            {
+                Socket recvSock = (Socket)iar.AsyncState;
+                EndPoint clientEP = new IPEndPoint(IPAddress.Any, 0);
+                int recv = recvSock.EndReceiveFrom(iar, ref clientEP);
+                byte[] data = new byte[recv];
+                Array.Copy(buffer, data, recv);
+                EndPoint newClientEP = new IPEndPoint(IPAddress.Any, 0);
+                serverSocket.BeginReceiveFrom(buffer, 0, buffer.Length, SocketFlags.None, ref newClientEP, DoReceiveFrom, serverSocket);
+                processMethod.BeginInvoke(data, recv, null, null);
+            }
+            catch (ObjectDisposedException)
+            {
+                Console.WriteLine("Server Closing.");
+            }
+            catch (SocketException ex)
+            {
+                Console.WriteLine("SocketException DoReceiveFrom: {0}", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception DoReceiveFrom: {0}", ex.Message);
+            }
+        }
+        public  void ReceiveMessage_ProConM()
         {
             receiveThread = new Thread(() => {
                 while (true)
@@ -144,7 +165,7 @@ namespace SocketTool
         {
             int receiveNumber = serverSocket.Receive(buffer);
             string tmp = System.Text.Encoding.ASCII.GetString(buffer, 0, receiveNumber);//接收到的数据
-            Debug.WriteLine("Reciive from {0} with {1} bytes", serverSocket.RemoteEndPoint.ToString(), tmp.Length.ToString());
+            Console.WriteLine("Reciive from {0}  bytes", tmp.Length.ToString());
             return System.Text.Encoding.ASCII.GetBytes(tmp);
         }
     }
